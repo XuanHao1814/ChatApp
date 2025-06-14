@@ -8,15 +8,28 @@ import java.util.Map;
 
 public class Server {
     private static Map<String, PrintWriter> clientWriters = new HashMap<>();
+    private static final int PORT = 1234;
 
-    public static void main(String[] args) throws IOException {
-        ServerSocket serverSocket = new ServerSocket(1234);
-        System.out.println("Server started...");
+    public static void main(String[] args) {
+        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+            System.out.println("Server started on port " + PORT);
 
-        while (true) {
-            Socket clientSocket = serverSocket.accept();
-            new ClientHandler(clientSocket).start();
+            while (true) {
+                Socket clientSocket = serverSocket.accept();
+                new ClientHandler(clientSocket).start();
+            }
+        } catch (IOException e) {
+            System.err.println("Could not listen on port " + PORT);
         }
+    }
+
+    // Thêm phương thức broadcast
+    public static void broadcast(String message, String excludeUser) {
+        clientWriters.forEach((username, writer) -> {
+            if (!username.equals(excludeUser)) {
+                writer.println(message);
+            }
+        });
     }
 
     private static class ClientHandler extends Thread {
@@ -72,12 +85,18 @@ public class Server {
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
-                try {
-                    clientSocket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                closeConnection();
                 clientWriters.remove(username);
+            }
+        }
+
+        public void closeConnection() {
+            try {
+                if (clientSocket != null) clientSocket.close();
+                if (in != null) in.close();
+                if (out != null) out.close();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }

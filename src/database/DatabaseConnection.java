@@ -1,23 +1,42 @@
 package database;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DatabaseConnection {
     private static Connection connection = null;
-
+    private static final String DB_URL = "jdbc:sqlserver://localhost:1433;databaseName=ChatApp;encrypt=true;trustServerCertificate=true";
+    private static final String USER = "sa";
+    private static final String PASS = "xhao2004";
+    
     public static Connection getConnection() {
-        if (connection == null) {
-            try {
-                String url = "jdbc:sqlserver://localhost:1433;databaseName=ChatApp;encrypt=true;trustServerCertificate=true;";
-                String user = "sa"; // Tên đăng nhập SQL Server
-                String password = "xhao2004"; // Mật khẩu SQL Server
-                connection = DriverManager.getConnection(url, user, password);
-                System.out.println("Connected to database!");
-            } catch (SQLException e) {
-                e.printStackTrace();
+        try {
+            if (connection == null || connection.isClosed()) {
+                Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+                connection = DriverManager.getConnection(DB_URL, USER, PASS);
+                System.out.println("Database connected successfully!");
             }
+        } catch (SQLException e) {
+            System.err.println("SQL Error: " + e.getMessage());
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            System.err.println("JDBC Driver not found: " + e.getMessage());
+            e.printStackTrace();
         }
         return connection;
+    }
+
+    public static void closeConnection() {
+        try {
+            if (connection != null && !connection.isClosed()) {
+                connection.close();
+                connection = null;
+                System.out.println("Database connection closed.");
+            }
+        } catch (SQLException e) {
+            System.err.println("Error closing connection: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

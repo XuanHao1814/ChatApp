@@ -2,7 +2,7 @@ import GUI.LoginFrame;
 
 import javax.swing.*;
 
-public class Main {
+public class Client {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             new LoginFrame().setVisible(true);

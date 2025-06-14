@@ -1,25 +1,21 @@
 package GUI;
 
+// Sửa lại các import
 import DAO.AttachmentDAO;
 import model.Attachment;
 import model.User;
 import service.ChatService;
 import service.UserService;
-
-// Sử dụng FlatLaf
 import com.formdev.flatlaf.FlatLightLaf;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.text.*;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.io.*;
 import java.net.Socket;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.util.List;
 
 public class ChatFrame extends JFrame {
@@ -29,9 +25,10 @@ public class ChatFrame extends JFrame {
     private JButton btnAttach = new JButton("Attach File");
     private JComboBox<String> userComboBox = new JComboBox<>();
 
-    private User currentUser;
+    private Socket socket;  // Khai báo socket là biến instance
     private PrintWriter out;
     private BufferedReader in;
+    private User currentUser;
     private ChatService chatService;
     private UserService userService;
     private int lastMessageId = -1;
@@ -132,6 +129,14 @@ public class ChatFrame extends JFrame {
         btnSend.addActionListener(e -> sendMessage());
         btnAttach.addActionListener(e -> attachFile());
         connectToServer();
+
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                closeConnection();
+                dispose();
+            }
+        });
     }
 
     private void setupChatStyles() {
@@ -176,7 +181,7 @@ public class ChatFrame extends JFrame {
 
     private void connectToServer() {
         try {
-            Socket socket = new Socket("localhost", 1234);
+            socket = new Socket("localhost", 1234);  // Khởi tạo socket
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
@@ -351,7 +356,6 @@ public class ChatFrame extends JFrame {
         if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
             if (selectedFile != null) {
-                String filePath = selectedFile.getAbsolutePath();
                 String fileType = getFileExtension(selectedFile);
                 int fileSize = (int) selectedFile.length();
 
@@ -409,5 +413,23 @@ public class ChatFrame extends JFrame {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+    }
+
+    private void closeConnection() {
+        try {
+            if (out != null) out.close();
+            if (in != null) in.close();
+            if (socket != null) socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Override phương thức dispose để đóng kết nối khi đóng cửa sổ
+    @Override
+    public void dispose() {
+        closeConnection();
+        super.dispose();
     }
 }
